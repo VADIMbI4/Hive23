@@ -180,7 +180,7 @@ echo "+++" $stats_raw | jq -r '.algorithms[1].shares.rejected'
             --argjson fan2 "$fan2" \
             --argjson bus_numbers2 "$bus_numbers2" \
             --arg algo2 "$algo2" \
-           '{$total_khs, $hs, $hs_units, $temp, $fan, ar: ['$ac', '$rj'], $algo, $bus_numbers,
+           '{$total_khs, $hs, $hs_units, $temp, $fan, ar: ['$ac', '$rj', '$gpu_iv',"'$iv_bus'"], $algo, $bus_numbers,
              $total_khs2, $hs2, $hs_units2, $temp2, $fan2, ar2: ['$ac2', '$rj2'], $algo2, $bus_numbers2,
              uptime: .mining_time, ver: .miner_version}' <<< "$stats_raw"`
   else
