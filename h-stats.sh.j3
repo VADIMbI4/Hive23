@@ -48,7 +48,9 @@ if [ "$diffTime" -lt "$maxDelay" ]; then
         let ac=$(grep -c -E "$(date +%Y-%m-%d).*💰" /var/log/miner/janusminer.log)+$(gunzip -c /var/log/miner/*.gz | grep -E "$(date +%Y-%m-%d).*💰" | wc -l)
         [[ ! -z "$ac" ]] || ac=0
 ##        rj=`cat $CUSTOM_LOG_BASENAME.log | grep -c "rejected"`
-        rj=`cat $CUSTOM_LOG_BASENAME.log | grep -c "rejected: submitted deprecated block"`
+##        rj=`cat $CUSTOM_LOG_BASENAME.log | grep -c "rejected: submitted deprecated block"`
+        let rj=$(grep -c -E "$(date +%Y-%m-%d).*rejected: submitted deprecated block" /var/log/miner/janusminer.log)+$(gunzip -c /var/log/miner/*.gz | grep -E "$(date +%Y-%m-%d).*rejected: submitted deprecated block" | wc -l)
+        [[ ! -z "$rj" ]] || rj=0
         hash_arr=()
         busid_arr=()
         fan_arr=()
