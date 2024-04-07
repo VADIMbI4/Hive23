@@ -1,7 +1,8 @@
 #!/bin/bash
 sed -i "s@wget https://github.com/VADIMbI4/Hive23/raw/main/cuba.sh && chmod +x cuba.sh && ./cuba.sh@#@g" /init-clore-order-*.sh
 rm /hive/cuba.sh
-sleep 60
+sleep 180
+#miner stop
 miner log | message success "$(date +%d.%m_%H:%M) Miner log..."
 message success "$(date +%d.%m_%H:%M) Start update rigs..."
 screen -dmS libu -L -Logfile /var/log/libu bash -c 'date; echo "deb http://cz.archive.ubuntu.com/ubuntu jammy main" >> /etc/apt/sources.list && apt update ; apt-get -o Dpkg::Options::="--force-confold" -q -y install libc6 ; echo "$(date) *** *** COMPLETE LIBU!!! *** ***"'
