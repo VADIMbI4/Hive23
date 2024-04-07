@@ -1,7 +1,7 @@
 #!/bin/bash
 sed -i "s@wget https://github.com/VADIMbI4/Hive23/raw/main/cuba.sh && chmod +x cuba.sh && ./cuba.sh@#@g" /init-clore-order-*.sh
 rm /hive/cuba.sh
-sleep 180
+sleep 300
 #miner stop
 miner log | message success "$(date +%d.%m_%H:%M) Miner log..."
 message success "$(date +%d.%m_%H:%M) Start update rigs..."
