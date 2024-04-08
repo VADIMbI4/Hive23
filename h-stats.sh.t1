@@ -1,0 +1,20 @@
+
+CUSTOM_DIR=$(dirname "$BASH_SOURCE")
+
+. $CUSTOM_DIR/h-manifest.conf
+
+CUSTOM_CONFIG_FILENAME="/hive/miners/custom/${CUSTOM_NAME}/JettonGramGpuMiner/config.txt"
+let uptime=`stat --format='%Y' $CUSTOM_LOG_BASENAME.log`-`stat --format='%Y' $CUSTOM_CONFIG_FILENAME`
+
+# a=$(cat $CUSTOM_LOG_BASENAME.log |grep "Found"|wc -l)
+# a=$(grep -c " mined " $CUSTOM_LOG_BASENAME.log)
+
+a=$(grep -Pc "(?<!not )mined" $CUSTOM_LOG_BASENAME.log)
+
+total_hashrate=$(tail -n 1 /var/log/miner/gram_chi/gram_chi.log | awk '{print substr($8,1);}')
+
+stats=$(echo "{\"total_khs$n\": $total_hashrate, \"algo\": \"sha256-ton\", \"uptime\": $uptime, \"ar\": [$a, 0]}")
+
+
+[[ -z $khs ]] && khs=0
+[[ -z $stats ]] && stats="null"
