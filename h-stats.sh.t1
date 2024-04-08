@@ -11,7 +11,19 @@ let uptime=`stat --format='%Y' $CUSTOM_LOG_BASENAME.log`-`stat --format='%Y' $CU
 
 a=$(grep -Pc "(?<!not )mined" $CUSTOM_LOG_BASENAME.log)
 
-total_hashrate=$(tail -n 1 /var/log/miner/gram_chi/gram_chi.log | awk '{print substr($8,1);}')
+#total_hashrate=$(tail -n 1 /var/log/miner/gram_chi/gram_chi.log | awk '{print substr($8,1);}')
+
+total_hashrate=$(tail -n 1 /var/log/miner/gram_chi/gram_chi.log | awk '{print substr($2,1,8);}' | sed 's/://' | sed 's/://')
+##'"
+echo -n "*** "$total_hashrate
+if (($total_hashrate > 0)) 
+  then
+   total_hashrate=$total_hashrate
+  else
+   total_hashrate=0
+fi
+
+echo " --> "$total_hashrate
 
 stats=$(echo "{\"total_khs$n\": $total_hashrate, \"algo\": \"sha256-ton\", \"uptime\": $uptime, \"ar\": [$a, 0]}")
 
