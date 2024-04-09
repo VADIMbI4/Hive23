@@ -16,7 +16,8 @@ a=$(grep -Pc "(?<!not )mined" $CUSTOM_LOG_BASENAME.log)
 total_hashrate=$(tail -n 1 /var/log/miner/gram_chi/gram_chi.log | awk '{print substr($2,1,8);}' | sed 's/://' | sed 's/://')
 ##'"
 echo -n "*** "$total_hashrate
-if (($total_hashrate > 0)) 
+#if (($total_hashrate > 0)) 
+if [ $total_hashrate -gt 0 ]
   then
    total_hashrate=$total_hashrate
   else
