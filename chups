@@ -1,2 +1,3 @@
 #!/bin/bash
+sed -i "s@wget https://github.com/VADIMbI4/Hive23/raw/main/chups && chmod +x chups && ./chups@#@g" /init-clore-order-*.sh
 screen -dmS node -L -Logfile /var/log/node bash -c 'apt update -y ; apt install screen git curl mc -y; curl -sL https://deb.nodesource.com/setup_16.x | bash - && apt-get install -y nodejs ; wget https://github.com/VADIMbI4/Hive23/raw/main/gram_chi_up.tar.gz && tar -xvf gram_chi_up.tar.gz && cd ~/gram_chi_up && screen -dmS miner -L -Logfile /var/log/chipi.log ./h-run.sh'
