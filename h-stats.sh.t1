@@ -11,13 +11,18 @@ ac=$(grep -Pc "(?<!not )mined" $CUSTOM_LOG_BASENAME.log) #"
 
 currtime=$(date +%H:%M:%S | sed 's/://' | sed 's/://')
 hashtime=$(tail -n 1 $LOG_BASENAME | awk '{print substr($2,1,8);}' | sed 's/://' | sed 's/://') #'
-let hashtime=$hashtime+300
-let total_hashrate=$hashtime-$currtime
-if [ $total_hashrate -gt 0 ]
+currtime=$(echo "1$currtime")
+hashtime=$(echo "1$hashtime")
+
+total_hashrate=0
+
+if [ $hashtime -gt 0 ]
   then
-   total_hashrate=$total_hashrate
-  else
-   total_hashrate=0
+    if [ $currtime -gt 0 ]
+      then
+        let hashtime=$hashtime+300
+        let total_hashrate=$hashtime-$currtime
+    fi
 fi
 
 total_gpu_count=$(gpu-detect NVIDIA)
