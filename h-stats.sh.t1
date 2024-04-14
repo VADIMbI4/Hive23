@@ -22,10 +22,8 @@ if [ $hashtime -gt 0 ]
       then
         let hashtime=$hashtime+240
         let total_hashrate=$hashtime-$currtime
-        if [ $total_hashrate -gt 260000 ]
+        if [ $total_hashrate -lt 200000 ]
           then
-            let total_hashrate=$total_hashrate/1000
-          else
             let total_hashrate=$total_hashrate*1000
         fi
     fi
