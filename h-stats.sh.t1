@@ -10,7 +10,7 @@ let uptime=`stat --format='%Y' $CUSTOM_LOG_BASENAME.log`-`stat --format='%Y' $CU
 ac=$(grep -Pc "(?<!not )mined" $CUSTOM_LOG_BASENAME.log) #"
 
 currtime=$(date +%H:%M:%S | sed 's/://' | sed 's/://')
-hashtime=$(tail -n 1 $LOG_BASENAME | awk '{print substr($2,1,8);}' | sed 's/://' | sed 's/://') #'
+hashtime=$(grep " mined " $LOG_BASENAME |tail -n1 | awk '{print substr($2,1,8);}' | sed 's/://' | sed 's/://') #'
 currtime=$(echo "1$currtime")
 hashtime=$(echo "1$hashtime")
 
@@ -39,17 +39,25 @@ local fan=$(jq '.fan' <<< $gpu_stats)
   temp=$(jq -c "del(.$cpu_indexes_array)" <<< $temp) &&
   fan=$(jq -c "del(.$cpu_indexes_array)" <<< $fan)
 
+  let t_hs=total_hashrate/$total_gpu_count
+  diedgpu=$(tail -n300 $LOG_BASENAME | grep "Died" | tail -n $total_gpu_count);
   for (( i=0; i < $total_gpu_count; i++ )); do
-     let t_hs=total_hashrate/$total_gpu_count
-     [[ ! -z $t_hs ]] && hs+=\"$t_hs\"" "
+     gpudi="Died $i";
+     if [[ $diedgpu =~ $gpudi ]];
+       then
+         [[ ! -z $t_hs ]] && hs+=\"0\"" "
+       else
+         [[ ! -z $t_hs ]] && hs+=\"$t_hs\"" " && khs=`echo $khs $t_hs | awk '{ printf("%.6f", $1 + $2/1) }'`
+     fi
 
+#     [[ ! -z $t_hs ]] && hs+=\"$t_hs\"" "
 #      && khs=`echo $khs $t_hs | awk '{ printf("%.6f", $1 + $2/1) }'`
 #      Total hashrate calc from any GPU on cycle
 
   done
 hash_json=`printf '%s\n' "${hs[@]}" | jq -cs '.'`
 
-khs=$total_hashrate
+#khs=$total_hashrate
 
 ver=1
 algo="sha256-ton"
