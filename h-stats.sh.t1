@@ -20,8 +20,14 @@ if [ $hashtime -gt 0 ]
   then
     if [ $currtime -gt 0 ]
       then
-        let hashtime=$hashtime+300
+        let hashtime=$hashtime+240
         let total_hashrate=$hashtime-$currtime
+        if [ $total_hashrate -gt 260000 ]
+          then
+            let total_hashrate=$total_hashrate/1000
+          else
+            let total_hashrate=$total_hashrate*1000
+        fi
     fi
 fi
 
@@ -35,12 +41,19 @@ local fan=$(jq '.fan' <<< $gpu_stats)
 
   for (( i=0; i < $total_gpu_count; i++ )); do
      let t_hs=total_hashrate/$total_gpu_count
-     [[ ! -z $t_hs ]] && hs+=\"$t_hs\"" " && khs=`echo $khs $t_hs | awk '{ printf("%.6f", $1 + $2/1) }'`
+     [[ ! -z $t_hs ]] && hs+=\"$t_hs\"" "
+
+#      && khs=`echo $khs $t_hs | awk '{ printf("%.6f", $1 + $2/1) }'`
+#      Total hashrate calc from any GPU on cycle
+
   done
 hash_json=`printf '%s\n' "${hs[@]}" | jq -cs '.'`
 
+khs=$total_hashrate
+
 ver=1
 algo="sha256-ton"
+hs_units="khs"
 
   stats=$(jq -nc \
         --argjson hs "`echo ${hs[@]} | tr " " "\n" | jq -cs '.'`" \
