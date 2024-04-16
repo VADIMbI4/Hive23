@@ -7,7 +7,9 @@ CUSTOM_CONFIG_FILENAME="/hive/miners/custom/${CUSTOM_NAME}/JettonGramGpuMiner/co
 LOG_BASENAME=$CUSTOM_LOG_BASENAME.log
 
 let uptime=`stat --format='%Y' $CUSTOM_LOG_BASENAME.log`-`stat --format='%Y' $CUSTOM_CONFIG_FILENAME`
-ac=$(grep -Pc "(?<!not )mined" $CUSTOM_LOG_BASENAME.log) #"
+
+#ac=$(grep -Pc "(?<!not )mined" $CUSTOM_LOG_BASENAME.log) #"
+let ac=$(grep -Pc '(?<!not )mined' $LOG_BASENAME)+$(gunzip -c $CUSTOM_LOG_BASENAME*.gz | grep -Pc '(?<!not )mined') #'
 
 currtime=$(date +%H:%M:%S | sed 's/://' | sed 's/://')
 hashtime=$(grep " mined " $LOG_BASENAME |tail -n1 | awk '{print substr($2,1,8);}' | sed 's/://' | sed 's/://') #'
