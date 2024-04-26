@@ -1,0 +1,73 @@
+
+CUSTOM_DIR=$(dirname "$BASH_SOURCE")
+
+. $CUSTOM_DIR/h-manifest.conf
+
+CUSTOM_CONFIG_FILENAME="/hive/miners/custom/${CUSTOM_NAME}/config.txt"
+LOG_BASENAME=$CUSTOM_LOG_BASENAME.log
+
+let uptime=`stat --format='%Y' $CUSTOM_LOG_BASENAME.log`-`stat --format='%Y' $CUSTOM_CONFIG_FILENAME`
+
+total_hashrate=$(grep "Total hashrate" $LOG_BASENAME | tail -n1 | awk '{print substr($4,1);}') #'
+
+total_gpu_count=$(gpu-detect NVIDIA)
+local temp=$(jq '.temp' <<< $gpu_stats)
+local fan=$(jq '.fan' <<< $gpu_stats)
+
+[[ $cpu_indexes_array != '[]' ]] && #remove Internal Gpus
+  temp=$(jq -c "del(.$cpu_indexes_array)" <<< $temp) &&
+  fan=$(jq -c "del(.$cpu_indexes_array)" <<< $fan)
+
+let t_hs_c=total_hashrate/$total_gpu_count
+t_hs_c=$(echo $t_hs_c | awk '{print $1/1000}')
+
+  for (( i=0; i < $total_gpu_count; i++ )); do
+
+    t_hs=$(grep -a "GPU #$i" $LOG_BASENAME | tail -n1 | awk '{print substr($5,1);}' | awk '{print $1/1000}') #'
+    if [[ ! -z $t_hs ]]
+      then hs+=\"$t_hs\"" " && khs=`echo $khs $t_hs | awk '{ printf("%.6f", $1 + $2/1) }'`;
+      else [[ ! -z $t_hs_c ]] && hs+=\"$t_hs_c\"" " && khs=`echo $khs $t_hs_c | awk '{ printf("%.6f", $1 + $2/1) }'`
+    fi
+
+  done
+
+hash_json=`printf '%s\n' "${hs[@]}" | jq -cs '.'`
+
+ver=$(grep "Miner version:" $LOG_BASENAME | awk '{print substr($3,1);}') #'
+algo="xevan"
+hs_units="khs"
+
+ac=$(grep -c " Found solution: " $LOG_BASENAME)
+let ac=ac+$(gunzip -c $CUSTOM_LOG_BASENAME*.gz | grep -c " Found solution: ")
+rj=0
+
+ac2=0
+rj2=0
+algo2="qubit"
+khscpu=$(tail -n 50 "/var/log/miner/custom/qubminer.log" | grep "Try" | awk -F '|' '{print $5}' | awk '{print $1/1000}' | tail -n 1)
+ac2=$(tail -n 10 "/var/log/miner/custom/qubminer.log" | grep "Try" | awk -F 'SOL: ' '{print $2}' | awk -F '/' '{print $1}' | tail -n 1)
+rj2=$(tail -n 10 "/var/log/miner/custom/qubminer.log" | grep "Try" | awk -F 'SOL: ' '{print $2}' | awk -F '/' '{if ($2>$1) print $2-$1; else print 0}' | tail -n 1) #'
+
+total_khs2=$khscpu
+
+[[ ! -z $khscpu ]] && hs2+=\"$khscpu\"" " && khs2=`echo $hs2 $khscpu | awk '{ printf("%.6f", $1 + $2/1) }'`
+hash2_json=`printf '%s\n' "${hs2[@]}" | jq -cs '.'`
+
+  stats=$(jq -nc \
+        --argjson hs "`echo ${hs[@]} | tr " " "\n" | jq -cs '.'`" \
+        --arg hs_units "$hs_units" \
+        --argjson temp "$temp" \
+        --argjson fan "$fan" \
+        --arg uptime "$uptime" \
+        --arg algo "$algo" \
+        --arg ac "$ac" --arg rj "$rj" \
+        --argjson hs2 "`echo ${hs2[@]} | tr " " "\n" | jq -cs '.'`" \
+        --arg algo2 "$algo2" \
+        --arg ac2 "$ac2" --arg rj2 "$rj2" \
+        --arg total_khs2 "$total_khs2" \
+        --arg ver "$ver" \
+        '{$hs, $hs_units, $temp, $fan, $uptime, ar: [$ac, $rj], $algo, $hs2, hs_units2: "khs", ar2: [$ac2, $rj2], $algo2, $total_khs2, $ver}')
+
+
+[[ -z $khs ]] && khs=0
+[[ -z $stats ]] && stats="null"
