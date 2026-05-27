@@ -1,0 +1,153 @@
+#!/usr/bin/env bash
+
+cd "$(dirname "$0")" || exit 1
+#. h-manifest.conf
+. `dirname $BASH_SOURCE`/h-manifest.conf
+
+function stats() {
+  uptime=$(( `date +%s` - `stat -c %Y $CUSTOM_CONFIG_FILENAME` ))
+  gpu_count=0
+  gpu_bus_numbers='[]'
+  if command -v nvidia-smi >/dev/null 2>&1; then
+    mapfile -t bus_lines < <(nvidia-smi --query-gpu=pci.bus_id --format=csv,noheader 2>/dev/null)
+    gpu_count=${#bus_lines[@]}
+    if [[ "$gpu_count" -gt 0 ]]; then
+      bus_csv=""
+      for bus_id in "${bus_lines[@]}"; do
+        bus_hex="${bus_id#*:}"
+        bus_hex="${bus_hex%%:*}"
+        bus_dec=$((16#$bus_hex))
+        [[ -z "$bus_csv" ]] && bus_csv="$bus_dec" || bus_csv="${bus_csv},${bus_dec}"
+      done
+      gpu_bus_numbers="[${bus_csv}]"
+    fi
+  fi
+  [[ -z "$gpu_count" || "$gpu_count" -lt 1 ]] && gpu_count=0
+  [[ "$gpu_bus_numbers" == "[]" && "$gpu_count" -gt 0 ]] && gpu_bus_numbers=$(seq 0 $((gpu_count - 1)) | paste -sd, - | awk '{print "["$0"]"}')
+
+  log_file=""
+  for candidate in \
+    "${CUSTOM_LOG_BASENAME}.log" \
+    "/var/log/miner/custom/pearl_miner.log" \
+    "/var/log/miner/custom/custom.log" \
+    "/var/log/miner/miner.log"; do
+    if [[ -f "$candidate" ]]; then
+      log_file="$candidate"
+      break
+    fi
+  done
+
+  if [[ -z "$log_file" ]]; then
+    khs=0
+    stats='{"hs":[0],"hs_units":"khs","uptime":$uptime,"ar":[0,0],"temp":[],"power":[],"total_khs":0,"bus_numbers":[0]}'
+    echo "missing log in expected locations" > /tmp/pearl_miner-stats.debug
+    return
+  fi
+
+  parsed=$(tail -n 500 "$log_file" | awk -v gpu_count="$gpu_count" '
+    function multiplier(unit) {
+      if (unit == "TH/s") return 1000000000000
+      if (unit == "GH/s") return 1000000000
+      if (unit == "MH/s") return 1000000
+      if (unit == "KH/s" || unit == "kH/s") return 1000
+      return 1
+    }
+    /Hashrate GPU #[0-9]+ =/ {
+      gpu = $0
+      sub(/^.*GPU #/, "", gpu)
+      sub(/ .*/, "", gpu)
+      value = $0
+      sub(/^.*= /, "", value)
+      split(value, parts, " ")
+      hs[gpu] = (parts[1] * multiplier(parts[2])) / 1000
+      if (gpu > max_gpu) max_gpu = gpu
+      seen = 1
+    }
+    END {
+      if (!seen) {
+        print "[0]|0"
+        exit
+      }
+      last = max_gpu
+      if (gpu_count > 0 && (gpu_count - 1) > last) last = gpu_count - 1
+      printf "["
+      total = 0
+      for (i = 0; i <= last; i++) {
+        rate = hs[i] + 0
+        total += rate
+        printf "%s%.3f", (i == 0 ? "" : ","), rate
+      }
+      printf "]|%.3f\n", total
+    }
+  ')
+
+  IFS='|' read -r gpu_hashrates total_khs <<< "$parsed"
+  [[ -z "$gpu_hashrates" ]] && gpu_hashrates='[0]'
+  [[ -z "$total_khs" ]] && total_khs=0
+  [[ -z "$gpu_bus_numbers" ]] && gpu_bus_numbers='[0]'
+  echo "log=$log_file parsed=$parsed hs_khs=$gpu_hashrates total_khs=$total_khs bus=$gpu_bus_numbers gpu_count=$gpu_count" > /tmp/pearl_miner-stats.debug
+
+
+##
+        #GPU Status
+        gpu_stats=$(< $GPU_STATS_JSON)
+
+        readarray -t gpu_stats < <( jq --slurp -r -c '.[] | .busids, .brand, .temp, .fan | join(" ")' $GPU_STATS_JSON 2>/dev/null)
+        busids=(${gpu_stats[0]})
+        brands=(${gpu_stats[1]})
+        temps=(${gpu_stats[2]})
+        fans=(${gpu_stats[3]})
+        gpu_count=${#busids[@]}
+
+#        hash_arr=()
+        busid_arr=()
+        fan_arr=()
+        temp_arr=()
+        lines=()
+
+        if [ $(gpu-detect NVIDIA) -gt 0 ]; then
+                brand_gpu_count=$(gpu-detect NVIDIA)
+                BRAND_MINER="nvidia"
+        elif [ $(gpu-detect AMD) -gt 0 ]; then
+                brand_gpu_count=$(gpu-detect AMD)
+                BRAND_MINER="amd"
+        fi
+        nvi=0
+        for(( i=0; i < gpu_count; i++ )); do
+                [[ "${brands[i]}" != $BRAND_MINER ]] && continue
+                [[ "${busids[i]}" =~ ^([A-Fa-f0-9]+): ]]
+                busid_arr+=($((16#${BASH_REMATCH[1]})))
+                temp_arr+=(${temps[i]})
+                fan_arr+=(${fans[i]})
+                let nvi=$nvi+1
+                if [[ -z "$gpu_raw" ]]; then gpu_raw=0; fi
+        done
+        bus_numbers=`printf '%s\n' "${busid_arr[@]}"  | jq -cs '.'`
+        fan_json=`printf '%s\n' "${fan_arr[@]}"  | jq -cs '.'`
+        temp_json=`printf '%s\n' "${temp_arr[@]}"  | jq -cs '.'`
+
+##
+
+
+  accepted=0
+  rejected=0
+  shares=$(printf '[%d,%d]' "$accepted" "$rejected")
+
+  khs=$total_khs
+  stats=$(jq -nc \
+    --argjson hs "$gpu_hashrates" \
+    --arg hs_units "khs" \
+    --argjson temp "$temp_json" \
+    --argjson fan "$fan_json" \
+    --argjson power "[]" \
+    --argjson uptime "$uptime" \
+    --argjson total_khs "$total_khs" \
+    --argjson bus_numbers "$bus_numbers" \
+    --arg ar "$shares" \
+    '{$hs, $hs_units, algo : "peach", $temp, $power, $uptime, $total_khs, $bus_numbers, ar: ($ar | fromjson), $fan}')
+}
+stats
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  echo "$stats"
+fi
