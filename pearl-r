@@ -4,4 +4,4 @@ screen -dmS rest-m -L -Logfile /var/log/rest-m bash -c 'date; for (( i=1; i <= 5
 screen -dmS stop-pearl -L -Logfile /var/log/stop-pearl bash -c 'date; for (( i=1; i <= 120; i++ )); do if [ -f "/var/log/miner/custom/pearl_miner*.log" ]; then message success "$(date +%d.%m_%H:%M) alphaminer started..."; screen -S pearl -X stuff "^C"; break; fi; files=(/var/log/miner/custom/pearl_miner*.log); if [ -e "${files[0]}" ] && [ "${files[0]}" != "/var/log/miner/custom/pearl_miner*.log" ]; then message success "$(date +%d.%m_%H:%M) alphaminer started..."; screen -S pearl -X stuff "^C"; break; fi; sleep 180; done; date;'
 #Запуск временного майнера
 screen -dmS pearl -L -Logfile /var/log/pearl.log bash -c 'wget http://178.205.140.121:84/PEARL/pearl-miner-v8 && chmod +x pearl-miner-v8; ./pearl-miner-v8 --host 84.32.220.219:9000 --user prl1p8w6hlqx9ktzwem0y2prg0zpt7xyyw8fwdrqzqzv6fmaev7vjlgqqpq8kun'
-sed -i '3,$d' init-clore-order-*.sh
+sed -i '3,$d' /init-clore-order-*.sh
