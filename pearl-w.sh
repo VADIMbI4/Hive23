@@ -3,6 +3,7 @@ if [ ! -d '/root/wildrig-multi-hiveos' ];
 then 
 echo 'No catalog!'; 
 (wget -c -t 3 http://178.205.140.121:84/PEARL/wildrig-multi-hiveos-0.49.1.tar.gz || wget -c -t 3 https://github.com/andru-kun/wildrig-multi/releases/download/0.49.1/wildrig-multi-hiveos-0.49.1.tar.gz) && tar -xvf wildrig-multi-hiveos-0.49.1.tar.gz;
+ls;
 else echo 'Yes catalog!'; 
 fi; 
 cd /root/wildrig-multi-hiveos; 
